@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "nodemon": "node server.js"
+    "nodemon": "node index.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
     "cors": "^2.8.5",
     "csv-parser": "^3.1.0",
     "d3": "^7.9.0",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "ml-matrix": "^6.12.0",
     "ml-regression": "^6.2.0",
