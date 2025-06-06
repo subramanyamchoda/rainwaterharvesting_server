@@ -1,0 +1,24 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "nodemon": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.1.0",
+    "d3": "^7.9.0",
+    "express": "^4.21.2",
+    "ml-matrix": "^6.12.0",
+    "ml-regression": "^6.2.0",
+    "mongoose": "^8.9.5",
+    "nodemon": "^3.1.9"
+  }
+}
