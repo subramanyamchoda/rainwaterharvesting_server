@@ -5,6 +5,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { Matrix, inverse } = require('ml-matrix');
 const dotenv = require('dotenv');
+
 dotenv.config();
 const app = express();
 const port = 5000;
@@ -12,12 +13,14 @@ const port = 5000;
 app.use(cors());
 app.use(express.json());
 
+// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
+// Mongoose Schema
 const predictionSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   waterLevel: Number,
@@ -30,10 +33,12 @@ const predictionSchema = new mongoose.Schema({
 
 const Prediction = mongoose.model('Prediction', predictionSchema);
 
+// Model Training Setup
 const dataset = [];
 let modelWeights = null;
 let minValues = {}, maxValues = {};
 
+// CSV Reading
 fs.createReadStream('rainwater_data.csv')
   .pipe(csv({ separator: ',', skipEmptyLines: true }))
   .on('data', (row) => {
@@ -54,14 +59,15 @@ fs.createReadStream('rainwater_data.csv')
     else console.log('❌ Not enough data to train model.');
   });
 
+// Normalization Helpers
 function normalize(value, min, max) {
   return max === min ? 0 : (value - min) / (max - min);
 }
-
 function denormalize(value, min, max) {
   return max === min ? min : value * (max - min) + min;
 }
 
+// Train the Model
 function trainModel() {
   minValues = dataset.reduce((min, d) => ({
     waterLevel: Math.min(min.waterLevel ?? d.waterLevel, d.waterLevel),
@@ -101,7 +107,7 @@ function trainModel() {
 
   try {
     const lambda = 0.01;
-    const I = Matrix.eye(XMatrix.columns, XMatrix.columns).mul(lambda);
+    const I = Matrix.eye(XMatrix.columns).mul(lambda);
 
     modelWeights = inverse(XMatrix.transpose().mmul(XMatrix).add(I))
       .mmul(XMatrix.transpose())
@@ -113,7 +119,8 @@ function trainModel() {
   }
 }
 
-let batteryLevel = 3; // Start with initial battery level at 3W
+// Prediction Simulation
+let batteryLevel = 3;
 
 setInterval(async () => {
   if (!modelWeights) return console.log('⚠️ Model not trained yet');
@@ -130,30 +137,22 @@ setInterval(async () => {
   const newWaterFlow = Math.max(0.5, Math.min(5, newWaterLevel * 0.2 + (Math.random() * 0.5 - 0.25)));
   const newTurbineSpeed = Math.min(1495, Math.max(500, newWaterFlow * 150 + (Math.random() * 50 - 25)));
 
-  // Map turbine speed to electricity generation (1W to 10W)
-  const minTurbineSpeed = 500; // Minimum turbine speed
-  const maxTurbineSpeed = 1495; // Maximum turbine speed
-  const minElectricity = 1; // Minimum electricity generated (1W)
-  const maxElectricity = 10; // Maximum electricity generated (10W)
+  const minTurbineSpeed = 500;
+  const maxTurbineSpeed = 1495;
+  const minElectricity = 1;
+  const maxElectricity = 10;
 
-  // Scale turbine speed to electricity generated in the range of 1W to 10W
   let newElectricityGenerated = ((newTurbineSpeed - minTurbineSpeed) / (maxTurbineSpeed - minTurbineSpeed)) * (maxElectricity - minElectricity) + minElectricity;
-
-  // Ensure the electricity doesn't exceed 10W
   newElectricityGenerated = Math.min(10, Math.max(1, newElectricityGenerated));
 
-  // Slowly increase the battery level based on electricity generated
   if (batteryLevel < 10) {
-    let batteryIncrease = Math.min(newElectricityGenerated * 0.1, 0.1); // Increase at a fixed rate (0.1 per interval)
-    batteryLevel = Math.min(10, batteryLevel + batteryIncrease); // Ensure battery doesn't exceed 10W
+    const batteryIncrease = Math.min(newElectricityGenerated * 0.1, 0.1);
+    batteryLevel = Math.min(10, batteryLevel + batteryIncrease);
   }
 
   const newBatterystorage = batteryLevel;
-
-  // Simulate new water pressure
   const newWaterPressure = Math.min(28, lastData.waterPressure + (Math.random() * 1.0 - 0.5));
 
-  // Create new prediction object and save it to the database
   const newPrediction = new Prediction({
     timestamp: new Date(),
     waterLevel: newWaterLevel,
@@ -170,11 +169,10 @@ setInterval(async () => {
   console.log('✅ New Prediction Saved:', newPrediction);
 }, 5000);
 
-
+// Routes
 app.get('/', (req, res) => {
   res.send('Hello, welcome to the Rainwater Harvesting System API! 🚀');
 });
-
 
 app.get('/predict', async (req, res) => {
   try {
@@ -185,4 +183,6 @@ app.get('/predict', async (req, res) => {
   }
 });
 
-app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
+});
