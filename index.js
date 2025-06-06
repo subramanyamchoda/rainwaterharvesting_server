@@ -5,10 +5,10 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { Matrix, inverse } = require('ml-matrix');
 const dotenv = require('dotenv');
-
+dotenv.config();
 const app = express();
 const port = 5000;
-dotenv.config();
+
 app.use(cors());
 app.use(express.json());
 
@@ -169,6 +169,12 @@ setInterval(async () => {
 
   console.log('✅ New Prediction Saved:', newPrediction);
 }, 5000);
+
+
+app.get('/', (req, res) => {
+  res.send('Hello, welcome to the Rainwater Harvesting System API! 🚀');
+});
+
 
 app.get('/predict', async (req, res) => {
   try {
